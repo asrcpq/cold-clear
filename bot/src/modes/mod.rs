@@ -1,6 +1,7 @@
 use libtetris::*;
 use opening_book::Book;
 use crate::evaluation::Evaluator;
+use crate::evaluation::Standard;
 use crate::{ Options, Info, Move, BotMsg };
 use serde::{ Serialize, Deserialize };
 use arrayvec::ArrayVec;
@@ -9,8 +10,8 @@ pub mod normal;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod pcloop;
 
-enum Mode<E: Evaluator> {
-    Normal(normal::BotState<E>),
+enum Mode {
+    Normal(normal::BotState<Standard>),
     PcLoop(pcloop::PcLooper)
 }
 
@@ -21,20 +22,20 @@ pub(crate) enum Task {
 }
 
 #[derive(Serialize, Deserialize)]
-pub(crate) enum TaskResult<V, R> {
-    NormalThink(normal::ThinkResult<V, R>),
+pub(crate) enum TaskResult {
+    NormalThink(normal::ThinkResult<<Standard as Evaluator>::Value, <Standard as Evaluator>::Reward>),
     PcLoopSolve(Option<ArrayVec<[FallingPiece; 10]>>)
 }
 
-pub(crate) struct ModeSwitchedBot<'a, E: Evaluator> {
-    mode: Mode<E>,
+pub(crate) struct ModeSwitchedBot<'a> {
+    mode: Mode,
     options: Options,
     board: Board,
     do_move: Option<u32>,
     book: Option<&'a Book>
 }
 
-impl<'a, E: Evaluator> ModeSwitchedBot<'a, E> {
+impl<'a> ModeSwitchedBot<'a> {
     pub fn new(board: Board, options: Options, book: Option<&'a Book>) -> Self {
         #[cfg(target_arch = "wasm32")]
         let mode = Mode::Normal(normal::BotState::new(board.clone(), options));
@@ -55,7 +56,7 @@ impl<'a, E: Evaluator> ModeSwitchedBot<'a, E> {
         }
     }
 
-    pub fn task_complete(&mut self, result: TaskResult<E::Value, E::Reward>) {
+    pub fn task_complete(&mut self, result: TaskResult) {
         match &mut self.mode {
             Mode::Normal(bot) => match result {
                 TaskResult::NormalThink(result) => bot.finish_thinking(result),
@@ -114,7 +115,7 @@ impl<'a, E: Evaluator> ModeSwitchedBot<'a, E> {
         }
     }
 
-    pub fn think(&mut self, eval: &E, send_move: impl FnOnce(Move, Info)) -> Vec<Task> {
+    pub fn think(&mut self, eval: &Standard, send_move: impl FnOnce(Move, Info)) -> Vec<Task> {
         let board = &mut self.board;
         let send_move = |mv: Move, info| {
             let next = board.advance_queue().unwrap();
@@ -198,7 +199,7 @@ impl<'a, E: Evaluator> ModeSwitchedBot<'a, E> {
 }
 
 impl Task {
-    pub fn execute<E: Evaluator>(self, eval: &E) -> TaskResult<E::Value, E::Reward> {
+    pub fn execute(self, eval: &Standard) -> TaskResult {
         match self {
             Task::NormalThink(thinker) => TaskResult::NormalThink(thinker.think(eval)),
             Task::PcLoopSolve(solver) => TaskResult::PcLoopSolve(solver.solve())

@@ -15,3 +15,9 @@ serde_json = "1"
 bincode = "1"
 libflate = "0.1"
 rand = "0.7.0"
+
+[dependencies.tttz-mpboard]
+path = "../../../src/mpboard"
+
+[dependencies.tttz-ai]
+path = "../../../src/ai"

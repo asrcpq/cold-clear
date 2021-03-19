@@ -5,4 +5,7 @@ Cargo.lock
 options.yaml
 replay.dat
 *.ccbook
-gui/res/generated
+*.json
+/optimizer/best
+/optimizer/pop.json
+/optimizer/recent-game.dat

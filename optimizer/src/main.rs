@@ -6,7 +6,7 @@ use std::sync::{ Arc, Mutex };
 use std::collections::VecDeque;
 use std::sync::mpsc::channel;
 
-mod battle;
+mod battle_tttz;
 mod mutate;
 
 use mutate::Mutateable;
@@ -21,10 +21,9 @@ fn main() {
         }),
         Err(_) => new_population::<Standard>()
     };
-
-    let matchups = Arc::new(Mutex::new((true, VecDeque::new())));
+    let matchups: Arc<Mutex<(bool, VecDeque<(usize, Standard, usize, Standard)>)>> = Arc::new(Mutex::new((true, VecDeque::new())));
     let (send, game_results) = channel();
-    for _ in 0..12 {
+    for _ in 0..7 {
         let matchups = matchups.clone();
         let send = send.clone();
         std::thread::spawn(move || {
@@ -37,7 +36,7 @@ fn main() {
                         None => continue
                     }
                 };
-                if let Some((replay, p1_won)) = battle::do_battle(p1_e, p2_e) {
+                if let Some((replay, p1_won)) = battle_tttz::do_battle(p1_e, p2_e) {
                     send.send(Some((if p1_won { p1 } else { p2 }, replay))).ok();
                 } else {
                     send.send(None).ok();

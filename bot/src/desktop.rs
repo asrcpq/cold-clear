@@ -2,7 +2,7 @@ use crossbeam_channel::{ Sender, Receiver, TryRecvError, unbounded, select };
 use std::sync::Arc;
 use libtetris::*;
 use opening_book::Book;
-use crate::evaluation::Evaluator;
+use crate::evaluation::Standard;
 use crate::modes::ModeSwitchedBot;
 use crate::{ Options, Info, BotMsg, BotPollState };
 
@@ -16,7 +16,7 @@ impl Interface {
     pub fn launch(
         board: Board,
         options: Options,
-        evaluator: impl Evaluator + Send + 'static,
+        evaluator: Standard,
         book: Option<Arc<Book>>
     ) -> Self {
         let (bot_send, recv) = unbounded();
@@ -105,7 +105,7 @@ fn run(
     recv: Receiver<BotMsg>,
     send: Sender<(Move, Info)>,
     mut board: Board,
-    eval: impl Evaluator + 'static,
+    eval: Standard,
     options: Options,
     book: Option<Arc<Book>>
 ) {
@@ -135,7 +135,6 @@ fn run(
 
     let (result_send, result_recv) = unbounded();
 
-    let eval = Arc::new(eval);
     loop {
         let new_tasks = bot.think(
             &eval,
