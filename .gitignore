@@ -6,6 +6,6 @@ options.yaml
 replay.dat
 *.ccbook
 *.json
-/optimizer/best
+/optimizer/best/*.json
 /optimizer/pop.json
 /optimizer/recent-game.dat
